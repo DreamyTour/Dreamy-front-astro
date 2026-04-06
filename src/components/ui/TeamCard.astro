@@ -1,0 +1,73 @@
+---
+interface Props {
+  name: string;
+  role: string;
+  department: string;
+  image?: string;
+}
+
+const { name, role, department, image } = Astro.props;
+
+const departmentColors: Record<string, string> = {
+  Administración: "bg-amber-500",
+  Ventas: "bg-emerald-500",
+  Finanzas: "bg-blue-500",
+  Transfer: "bg-violet-500",
+  Sistemas: "bg-rose-500",
+};
+
+const bgColor = departmentColors[department] || "bg-primary";
+---
+
+<div class="group relative h-full">
+  <div
+    class="relative h-full overflow-hidden rounded-sm bg-white shadow-lg shadow-primary/5 border border-border transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2"
+  >
+    <!-- Image Container -->
+    <div class="absolute inset-0">
+      {
+        image && (
+          <img
+            src={image}
+            alt={name}
+            class="not-prose absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            loading="lazy"
+          />
+        )
+      }
+      <!-- Gradient Overlay -->
+      <div
+        class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"
+      >
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="absolute bottom-0 left-0 right-0 p-6">
+      <!-- Department Badge -->
+      <div class="inline-flex items-center gap-2 mb-3">
+        <span class={`w-2.5 h-2.5 rounded-full ${bgColor} shadow-lg`}></span>
+        <span
+          class="text-xs font-semibold uppercase tracking-wider"
+          style="color: rgba(255, 255, 255, 0.9)">{department}</span
+        >
+      </div>
+
+      <!-- Name -->
+      <h3
+        class="text-xl font-bold mb-1 leading-tight transition-colors"
+        style="color: white"
+      >
+        {name}
+      </h3>
+
+      <!-- Role -->
+      <p
+        class="text-sm font-medium transition-colors"
+        style="color: rgba(255, 255, 255, 1)"
+      >
+        {role}
+      </p>
+    </div>
+  </div>
+</div>

@@ -2,7 +2,7 @@
  * Interfaces para la página Home (singleType "home" en Strapi).
  */
 
-import type { Imagen, Link, } from "./common";
+import type { Imagen, Link, SEO } from "./common";
 
 
 export interface Category {
@@ -62,6 +62,14 @@ export interface boliviaPaquetes {
   limit: number
   category: Category
 }
+
+export interface sectionCardPost {
+  id: number
+  titulo: string
+  description: string
+  limit: number
+  blogs: Category
+}
 /** Respuesta del singleType Home */
 export interface Home {
   id: number;
@@ -76,5 +84,6 @@ export interface Home {
   sectionMapi: SectionMapi;
   peruPaquetes: peruPaquetes;
   boliviaPaquetes: boliviaPaquetes;
+  cardPost: sectionCardPost;
+  seo?: SEO;
 }
-

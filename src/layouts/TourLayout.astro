@@ -1,0 +1,23 @@
+---
+import Layout from "@/layouts/main.astro";
+import type { SEOProps } from "@/components/SEO.astro";
+
+interface Props {
+  slugMap?: Record<string, string>;
+  seo?: SEOProps;
+}
+
+const { slugMap, seo } = Astro.props;
+---
+
+<Layout seo={seo}>
+  <slot />
+</Layout>
+
+{slugMap && (
+  <script
+    id="tour-slug-map"
+    type="application/json"
+    set:html={JSON.stringify(slugMap)}
+  />
+)}

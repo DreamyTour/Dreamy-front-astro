@@ -1,0 +1,562 @@
+---
+import Layout from "@/layouts/main.astro";
+import fetchApi from "@/lib/strapi";
+import type { Blog } from "@/interface/blog";
+import { LANGS, DEFAULT_LANG } from "@/lib/i18n";
+import CardPost from "@/components/ui/CardPost.astro";
+import BlogAside from "@/components/ui/BlogAside.astro";
+import LiteYouTube from "@/components/LiteYouTube.astro";
+import TableOfContents from "@/components/ui/TableOfContents.astro";
+import { getImageUrl } from "@/lib/helpers";
+import { buildSEOProps } from "@/lib/seo";
+
+// Generate SEO description from JSON blocks
+function generateDescription(
+  blocks: unknown[] | undefined,
+  maxLength = 160,
+): string {
+  if (!blocks || !Array.isArray(blocks)) return "";
+  let plainText = "";
+  for (const block of blocks) {
+    if (typeof block === "object" && block !== null) {
+      const b = block as { type?: string; children?: Array<{ text?: string }> };
+      if (b.type === "paragraph" && b.children) {
+        plainText += b.children.map((c) => c.text || "").join(" ") + " ";
+      }
+    }
+  }
+  plainText = plainText.replace(/\s+/g, " ").trim();
+  return plainText.length > maxLength
+    ? plainText.substring(0, maxLength) + "..."
+    : plainText;
+}
+
+// Helper to generate slug from heading text
+function generateSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric with dashes
+    .replace(/(^-|-$)/g, ""); // Remove leading/trailing dashes
+}
+
+// Extract all H2 headings from content for TOC
+function extractHeadings(blocks: any[]): { id: string; text: string }[] {
+  if (!blocks || !Array.isArray(blocks)) return [];
+  
+  const headings: { id: string; text: string }[] = [];
+  
+  for (const block of blocks) {
+    if (block.type === "heading" && block.level === 2) {
+      const text = block.children?.map((c: any) => c.text).join("") || "";
+      headings.push({
+        id: generateSlug(text),
+        text,
+      });
+    }
+  }
+  
+  return headings;
+}
+
+// Find the index of the first H2 in the content
+function findFirstH2Index(blocks: any[]): number {
+  if (!blocks || !Array.isArray(blocks)) return -1;
+  
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i].type === "heading" && blocks[i].level === 2) {
+      return i;
+    }
+  }
+  
+  return -1;
+}
+
+// Extract YouTube video ID from URL
+function getYouTubeVideoId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// Get thumbnail URL from Strapi image
+function getThumbnailUrl(thumbnail: any): string | null {
+  if (!thumbnail?.url) return null;
+  const baseUrl = import.meta.env.VITE_STRAPI_URL?.replace(/\/$/, "");
+  return thumbnail.url.startsWith("http")
+    ? thumbnail.url
+    : `${baseUrl}${thumbnail.url}`;
+}
+
+export async function getStaticPaths() {
+  const allBlogsByLang: Record<string, Blog[]> = {};
+  const globalDataByLang: Record<string, any> = {};
+  const relatedBlogsByLang: Record<string, Record<string, Blog[]>> = {};
+
+  // Fetch blogs and global data for each language
+  for (const lang of LANGS) {
+    const blogs = await fetchApi<Blog[]>({
+      endpoint: "posts",
+      wrappedByKey: "data",
+      locale: lang,
+      query: {
+        "populate[portadaImage]": "*",
+        "populate[category_blogs]": "*",
+      },
+    });
+    allBlogsByLang[lang] = blogs && Array.isArray(blogs) ? blogs : [];
+
+    // Fetch global data for social logos con populate explícito
+    const globalData = await fetchApi<any>({
+      endpoint: "global",
+      wrappedByKey: "data",
+      locale: lang,
+      query: {
+        populate: {
+          footer: {
+            populate: {
+              socialLogo: {
+                populate: ["imagen"],
+              },
+            },
+          },
+        },
+      },
+    });
+    globalDataByLang[lang] = globalData;
+
+    // Pre-calculate related blogs (same category, excluding current)
+    relatedBlogsByLang[lang] = {};
+    for (const blog of allBlogsByLang[lang]) {
+      const categories = blog.category_blogs || [];
+      // Get posts in same categories (excluding current)
+      const relatedPosts = allBlogsByLang[lang]
+        .filter(b => 
+          b.documentId !== blog.documentId && // Not the same post
+          b.category_blogs?.some((cat: any) => 
+            categories.some((c: any) => c.documentId === cat.documentId)
+          )
+        )
+        .slice(0, 3); // Max 3 related posts
+      
+      relatedBlogsByLang[lang][blog.documentId] = relatedPosts;
+    }
+  }
+
+  // 🔹 MAPA DE SLUGS PARA BLOG (idiomas)
+  const slugsByDocId: Record<string, Record<string, string>> = {};
+
+  for (const lang of LANGS) {
+    for (const blog of allBlogsByLang[lang]) {
+      if (!slugsByDocId[blog.documentId]) {
+        slugsByDocId[blog.documentId] = {};
+      }
+      slugsByDocId[blog.documentId][lang] = blog.slug;
+    }
+  }
+
+  const paths: any[] = [];
+
+  for (const lang of LANGS) {
+    const cats = await fetchApi<any[]>({
+      endpoint: "category-blogs",
+      wrappedByKey: "data",
+      locale: lang,
+    });
+    const allCategories = cats && Array.isArray(cats) ? cats : [];
+
+    for (const blog of allBlogsByLang[lang]) {
+      paths.push({
+        params: { lang, slug: blog.slug },
+        props: {
+          blog,
+          lang,
+          allCategories,
+          slugMap: slugsByDocId[blog.documentId] ?? {},
+          globalData: globalDataByLang[lang],
+          relatedBlogs: relatedBlogsByLang[lang][blog.documentId] || [],
+        },
+      });
+    }
+  }
+
+  // FALLBACK: Redirect a DEFAULT_LANG si la página no existe en el idioma actual
+  const defaultLangBlogs = allBlogsByLang[DEFAULT_LANG] || [];
+  const allPathsBySlug: Record<string, string[]> = {};
+  
+  // Mapear qué slugs existen en qué idiomas
+  for (const path of paths) {
+    const slug = path.params.slug;
+    if (!allPathsBySlug[slug]) {
+      allPathsBySlug[slug] = [];
+    }
+    allPathsBySlug[slug].push(path.params.lang);
+  }
+
+  // Agregar redirects para slugs que NO existen en otros idiomas pero SÍ en DEFAULT_LANG
+  for (const lang of LANGS) {
+    if (lang === DEFAULT_LANG) continue;
+
+    const currentLangBlogs = allBlogsByLang[lang] || [];
+    const currentSlugs = new Set(currentLangBlogs.map((b: Blog) => b.slug));
+
+    for (const defaultBlog of defaultLangBlogs) {
+      if (!currentSlugs.has(defaultBlog.slug)) {
+        // Verificar que el slug existe en DEFAULT_LANG
+        const slugLanguages = allPathsBySlug[defaultBlog.slug] || [];
+        if (slugLanguages.length > 0 && slugLanguages.includes(DEFAULT_LANG)) {
+          // Crear redirect 301 al idioma por defecto
+          paths.push({
+            params: { lang, slug: defaultBlog.slug },
+            props: {
+              isRedirect: true,
+              redirectTo: `/${DEFAULT_LANG}/blog/${defaultBlog.slug}`,
+              blog: defaultBlog,
+              lang,
+              allCategories: [],
+              slugMap: slugsByDocId[defaultBlog.documentId] ?? {},
+              globalData: globalDataByLang[lang] || globalDataByLang[DEFAULT_LANG],
+              relatedBlogs: relatedBlogsByLang[DEFAULT_LANG][defaultBlog.documentId] || [],
+            },
+          });
+        }
+      }
+    }
+  }
+
+  return paths;
+}
+
+const { 
+  blog, 
+  lang, 
+  allCategories, 
+  slugMap, 
+  globalData, 
+  relatedBlogs,
+  isRedirect,
+  redirectTo
+} = Astro.props;
+
+// Redirect 301 si la página no existe en este idioma
+if (isRedirect && redirectTo) {
+  return Astro.redirect(redirectTo, 301);
+}
+
+const socialLogos =
+  globalData?.footer?.socialLogo || globalData?.socialLogo || [];
+
+// SEO props
+const seoProps = buildSEOProps({
+  seo: blog.seo,
+  fallbackTitle: blog.titulo || "Blog",
+  fallbackDescription: generateDescription(blog.contenido),
+  fallbackImage: getImageUrl(blog.portadaImage),
+  type: "article",
+  lang,
+  publishedTime: blog.publishedAt,
+  slugMap,
+});
+
+// Extract headings for TOC
+const tocHeadings = extractHeadings(blog.contenido);
+const firstH2Index = findFirstH2Index(blog.contenido);
+---
+
+<Layout seo={seoProps}>
+  {/* Hero Image con título, categoría y fecha como fondo */}
+  {
+    blog.portadaImage ? (
+      <div class="mt-8 relative w-full max-w-8xl mx-auto h-[50vh] min-h-[400px] max-h-[600px] overflow-hidden rounded-sm">
+        {/* Imagen de fondo */}
+        <div
+          class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={`background-image: url('${getImageUrl(blog.portadaImage)}')`}
+        />
+        {/* Overlay oscuro */}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
+
+        {/* Contenido sobre la imagen */}
+        <div class="relative z-10 max-w-8xl mx-auto px-4 md:px-8 h-full flex flex-col justify-end pb-12">
+          {/* Categoría */}
+          <div class="flex flex-wrap gap-3 mb-4">
+            {blog.category_blogs?.map((cat: any) => (
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-primary/20 backdrop-blur-sm text-white uppercase tracking-wider border border-primary">
+                {cat.nombre}
+              </span>
+            ))}
+          </div>
+
+          {/* Título */}
+          <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4 drop-shadow-lg">
+            {blog.titulo}
+          </h1>
+
+          {/* Fecha */}
+          {blog.publishedAt && (
+            <span class="text-sm font-medium text-white/80 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              {new Date(blog.publishedAt).toLocaleDateString(
+                lang === "es" ? "es-ES" : lang === "pt" ? "pt-BR" : "en-US",
+                {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                },
+              )}
+            </span>
+          )}
+        </div>
+      </div>
+    ) : (
+      /* Fallback sin imagen */
+      <div class="max-w-8xl mx-auto px-4 md:px-8 py-16">
+        <div class="text-center">
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            {blog.category_blogs?.map((cat: any) => (
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary uppercase tracking-wider">
+                {cat.nombre}
+              </span>
+            ))}
+          </div>
+          <h1 class="text-3xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight mb-4">
+            {blog.titulo}
+          </h1>
+          {blog.publishedAt && (
+            <span class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              {new Date(blog.publishedAt).toLocaleDateString(
+                lang === "es" ? "es-ES" : lang === "pt" ? "pt-BR" : "en-US",
+                {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                },
+              )}
+            </span>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  {/* Contenido del post */}
+  <div class="max-w-8xl mx-auto px-4 md:px-8 py-12 lg:py-16">
+    <div class="flex flex-col lg:flex-row gap-12 lg:gap-16 justify-between">
+      {/* Principal Post Column */}
+      <article class="w-full lg:w-[70%] xl:w-[75%] mx-auto lg:mx-0">
+        {/* Tabla de Contenidos */}
+        <TableOfContents headings={tocHeadings} />
+        
+        <div class="w-full text-gray-700 dark:text-gray-300">
+          {
+            blog.contenido && Array.isArray(blog.contenido) ? (
+              blog.contenido.map((block: any) => {
+                if (block.type === "paragraph") {
+                  return (
+                    <p class="mb-7 text-base leading-[1.8] text-gray-700 dark:text-gray-300">
+                      {block.children?.map((child: any) => {
+                        let text = child.text;
+                        if (child.bold)
+                          return (
+                            <strong class="font-semibold text-gray-900 dark:text-white">
+                              {text}
+                            </strong>
+                          );
+                        if (child.italic) return <em class="italic">{text}</em>;
+                        if (child.underline)
+                          return (
+                            <u class="underline underline-offset-4">{text}</u>
+                          );
+                        if (child.code)
+                          return (
+                            <code class="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-sm font-mono text-primary">
+                              {text}
+                            </code>
+                          );
+                        return text;
+                      })}
+                    </p>
+                  );
+                }
+                if (block.type === "heading") {
+                  const Tag = `h${block.level}` as any;
+                  const headingText = block.children?.map((child: any) => child.text).join("") || "";
+                  const headingId = generateSlug(headingText);
+                  return (
+                    <Tag
+                      id={headingId}
+                      class={
+                        block.level === 1
+                          ? "text-3xl font-bold mt-12 mb-6 text-gray-900 dark:text-white tracking-tight"
+                          : block.level === 2
+                            ? "text-2xl font-bold mt-10 mb-5 text-gray-900 dark:text-white tracking-tight scroll-mt-24"
+                            : block.level === 3
+                              ? "text-xl font-semibold mt-8 mb-4 text-gray-900 dark:text-white tracking-tight scroll-mt-24"
+                              : block.level === 4
+                                ? "text-lg font-semibold mt-6 mb-3 text-gray-900 dark:text-white scroll-mt-24"
+                                : "text-base font-semibold mt-5 mb-2 text-gray-900 dark:text-white scroll-mt-24"
+                      }
+                    >
+                      {headingText}
+                    </Tag>
+                  );
+                }
+                if (block.type === "list") {
+                  const ListTag =
+                    block.format === "ordered" ? ("ol" as any) : ("ul" as any);
+                  const listClasses =
+                    block.format === "ordered"
+                      ? "list-decimal pl-6 mb-4 space-y-3 text-base leading-[1.8] text-gray-700 dark:text-gray-300 marker:text-gray-500"
+                      : "list-disc pl-6 mb-4 space-y-3 text-base leading-[1.8] text-gray-700 dark:text-gray-300 marker:text-gray-400";
+                  return (
+                    <ListTag class={listClasses}>
+                      {block.children?.map((item: any) => (
+                        <li class="pl-2">
+                          {item.children?.map((child: any) => {
+                            let text = child.text;
+                            if (child.bold)
+                              return (
+                                <strong class="font-semibold text-gray-900 dark:text-white">
+                                  {text}
+                                </strong>
+                              );
+                            if (child.italic)
+                              return <em class="italic">{text}</em>;
+                            if (child.underline)
+                              return (
+                                <u class="underline underline-offset-4">
+                                  {text}
+                                </u>
+                              );
+                            if (child.code)
+                              return (
+                                <code class="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-sm font-mono text-primary">
+                                  {text}
+                                </code>
+                              );
+                            return text;
+                          })}
+                        </li>
+                      ))}
+                    </ListTag>
+                  );
+                }
+                if (block.type === "image") {
+                  return (
+                    <figure class="my-10 mx-auto">
+                      <img
+                        src={getImageUrl(block.image)}
+                        alt={block.image?.alternativeText || "Blog image"}
+                        class="w-full h-auto object-cover rounded-sm border border-gray-100 dark:border-gray-800 shadow-sm bg-gray-50 dark:bg-gray-900"
+                      />
+                      {block.image?.caption && (
+                        <figcaption class="text-center text-sm font-medium text-gray-500 dark:text-gray-400 mt-3">
+                          {block.image.caption}
+                        </figcaption>
+                      )}
+                    </figure>
+                  );
+                }
+                if (block.type === "component" && (block.__component === "shared.video" || block.component === "shared.video")) {
+                  const videoId = getYouTubeVideoId(block.videoURL || block.videoUrl);
+                  if (videoId) {
+                    const thumbnailUrl = getThumbnailUrl(block.thumbnail);
+                    return (
+                      <div class="my-10">
+                        <div class="flex flex-col lg:flex-row gap-8 items-start">
+                          <div class="hidden lg:block lg:w-[380px] shrink-0">
+                            <LiteYouTube
+                              videoId={videoId}
+                              title={block.title || "Video"}
+                              backgroundImage={thumbnailUrl || undefined}
+                              withShadowImage={!!thumbnailUrl}
+                            />
+                          </div>
+                          <div class="lg:hidden w-full">
+                            <LiteYouTube
+                              videoId={videoId}
+                              title={block.title || "Video"}
+                              backgroundImage={thumbnailUrl || undefined}
+                              withShadowImage={!!thumbnailUrl}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }
+                return null;
+              })
+            ) : (
+              <p class="text-gray-500 italic">No content available.</p>
+            )
+          }
+        </div>
+      </article>
+
+      {/* Sidebar Right */}
+      <BlogAside 
+        categories={allCategories} 
+        currentSlug={blog.category_blogs?.[0]?.slug}
+        lang={lang}
+        socialLogos={socialLogos}
+      />
+    </div>
+  </div>
+
+  {/* Posts Relacionados */}
+  {relatedBlogs && relatedBlogs.length > 0 && (
+    <section class="max-w-8xl mx-auto px-4 md:px-8 py-16 lg:py-20 border-t border-gray-100 mt-12">
+      <div class="text-center mb-10">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 relative inline-block">
+          <span class="relative z-10">{lang === "es" ? "Posts Relacionados" : lang === "pt" ? "Posts Relacionados" : "Related Posts"}</span>
+          <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-secondary/30 -z-0 rounded-full blur-sm" />
+        </h2>
+        <div class="flex items-center justify-center gap-3 mt-4">
+          <div class="h-[1px] w-16 bg-gradient-to-r from-transparent to-secondary" />
+          <div class="w-12 h-1.5 bg-secondary rounded-full relative">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full" />
+          </div>
+          <div class="h-[1px] w-16 bg-gradient-to-l from-transparent to-secondary" />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        {relatedBlogs.map((relatedBlog: Blog) => (
+          <CardPost blog={relatedBlog} lang={lang} />
+        ))}
+      </div>
+    </section>
+  )}
+</Layout>
+
+{
+  slugMap && Object.keys(slugMap).length > 0 && (
+    <script
+      id="blog-slug-map"
+      type="application/json"
+      set:html={JSON.stringify(slugMap)}
+    />
+  )
+}

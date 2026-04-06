@@ -3,6 +3,8 @@ import type { HeaderTop as HeaderTopType } from "@/interface/global";
 import Button from "@/components/ui/button.astro";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import type { Lang } from "@/lib/i18n";
+import { rewriteUrl } from "@/lib/utils";
+import { getStrapiUrl } from "@/lib/helpers";
 
 interface Props {
   data?: HeaderTopType;
@@ -11,6 +13,8 @@ interface Props {
 
 const { data, lang } = Astro.props;
 if (!data) return;
+
+const logoUrl = rewriteUrl(data.logo.url || "/", lang);
 
 // Función helper para links / botones
 const getLinkProps = (
@@ -26,19 +30,21 @@ const getLinkProps = (
 
 <div class="hidden lg:block w-full bg-background text-foreground pb-4">
   <!-- Bloque superior: links a la izquierda, logo a la derecha -->
-  <div class="flex max-w-7xl justify-between items-center mx-auto px-4">
+  <div class="flex max-w-8xl justify-between items-center mx-auto px-4">
     <!-- Logo -->
     <div class="group">
       <a
-        href={data.logo.url}
+        href={logoUrl}
         target={data.logo.isExternal ? "_blank" : "_self"}
         rel={data.logo.isExternal ? "noopener noreferrer" : undefined}
       >
         {
           data.logo.imagen && (
             <img
-              src={`http://localhost:1337${data.logo.imagen.url}`}
+              src={`${getStrapiUrl()}${data.logo.imagen.url}`}
               alt={data.logo.imagen.alternativeText ?? data.logo.label}
+              width={data.logo.imagen.width}
+              height={data.logo.imagen.height}
               class="h-16 w-auto group-hover:scale-105 duration-300 transition-transform"
             />
           )
@@ -55,7 +61,7 @@ const getLinkProps = (
             const { target, rel } = getLinkProps(link);
             return (
               <a
-                href={link.url}
+                href={rewriteUrl(link.url, lang)}
                 target={target}
                 rel={rel}
                 class="px-4 text-muted-foreground hover:text-primary transition-colors duration-200 cursor-pointer"
@@ -74,7 +80,7 @@ const getLinkProps = (
             data.button.map((btn) => (
               <Button
                 label={btn.label}
-                href={btn.url}
+                href={rewriteUrl(btn.url, lang)}
                 type={btn.type}
                 isExternal={btn.isExternal}
               />

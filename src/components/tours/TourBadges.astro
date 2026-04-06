@@ -13,65 +13,58 @@ if (!badges || badges.length === 0) return;
 const strapiUrl = import.meta.env.VITE_STRAPI_URL?.replace(/\/$/, "");
 ---
 
-<section class="tour-badges w-full py-6 md:py-8">
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-    {
-      badges.map((badge) => {
-        const iconUrl = badge.icono?.url
-          ? `${strapiUrl}${badge.icono.url}`
-          : null;
+<section class="tour-badges w-full py-4 md:py-6 mb-16">
+  <div class="overflow-hidden">
+    <div
+      class="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-200/70"
+    >
+      {
+        badges.map((badge, index) => {
+          const iconUrl = badge.icono?.url
+            ? `${strapiUrl}${badge.icono.url}`
+            : null;
 
-        return (
-          <div class="tour-badge group flex items-center gap-3 md:gap-4 bg-white border border-gray-100 rounded-xl px-4 py-4 md:px-5 md:py-5 transition-shadow duration-300 hover:shadow-sm">
-            {/* Icono */}
-            {iconUrl ? (
-              <div class="flex-shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <img
-                  src={iconUrl}
-                  alt={badge.icono?.alternativeText ?? badge.titulo}
-                  class="w-4 h-4 md:w-5 md:h-5 object-contain"
-                  loading="lazy"
-                />
-              </div>
-            ) : (
-              <div class="flex-shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <span class="text-secondary text-sm">●</span>
-              </div>
-            )}
+          return (
+            <div
+              class="flex-1 flex items-center justify-start md:justify-center px-6 md:px-4 lg:px-4 py-3 md:py-3 hover:bg-gray-50/50 transition-colors duration-300 group"
+              style={`animation: badge-fade-in 0.5s ease-out ${index * 0.1}s both;`}
+            >
+              <div class="flex items-center gap-4 lg:gap-5 w-full md:w-auto">
+                {/* Icono */}
+                {iconUrl ? (
+                  <div class="flex-shrink-0">
+                    <img
+                      src={iconUrl}
+                      alt={badge.icono?.alternativeText ?? badge.titulo}
+                      class="w-6 h-6 object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                ) : (
+                  <div class="flex-shrink-0 w-9 h-9 md:w-10 md:h-10 lg:w-11 lg:h-11 flex items-center justify-center">
+                    <span class="text-secondary text-xl font-bold">●</span>
+                  </div>
+                )}
 
-            {/* Texto */}
-            <div class="flex flex-col min-w-0">
-              <span class="text-[0.65rem] md:text-xs font-semibold uppercase tracking-wider text-gray-400 leading-tight">
-                {badge.titulo}
-              </span>
-              <span class="text-sm md:text-base font-bold text-gray-800 leading-snug truncate">
-                {badge.content}
-              </span>
+                {/* Texto */}
+                <div class="flex flex-col min-w-0">
+                  <span class="text-[0.95rem] md:test-base font-bold text-gray-800 leading-tight">
+                    {badge.content}
+                  </span>
+                  <span class="text-[0.65rem] lg:text-[0.7rem] font-medium uppercase tracking-[0.15em] text-gray-400 mt-1">
+                    {badge.titulo}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        );
-      })
-    }
+          );
+        })
+      }
+    </div>
   </div>
 </section>
 
 <style>
-  .tour-badge {
-    animation: badge-fade-in 0.5s ease-out both;
-  }
-  .tour-badge:nth-child(1) {
-    animation-delay: 0.1s;
-  }
-  .tour-badge:nth-child(2) {
-    animation-delay: 0.18s;
-  }
-  .tour-badge:nth-child(3) {
-    animation-delay: 0.26s;
-  }
-  .tour-badge:nth-child(4) {
-    animation-delay: 0.34s;
-  }
-
   @keyframes badge-fade-in {
     from {
       opacity: 0;

@@ -1,0 +1,183 @@
+---
+import imagen39 from "@/assets/clientes/39.webp";
+
+interface Props {
+  totalImages: number;
+}
+
+const { totalImages } = Astro.props;
+
+// Gallery items - all same size
+const galleryItems = [
+  {
+    img: imagen39,
+    alt: "Clientes satisfechos de Dreamy Tours en tour por Machu Picchu",
+  },
+  {
+    img: imagen39,
+    alt: "Grupo de turistas explorando Cusco con guía profesional",
+  },
+  { img: imagen39, alt: "Aventura en el Lago Titicaca Bolivia" },
+  { img: imagen39, alt: "Viajeros disfrutando del Salar de Uyuni" },
+  { img: imagen39, alt: "Tour por la selva amazónica del Perú" },
+  { img: imagen39, alt: "Experiencia única en las líneas de Nazca" },
+  { img: imagen39, alt: "Aventura en el Cañón del Colca Arequipa" },
+  { img: imagen39, alt: "Viajeros en la montaña de los 7 colores" },
+  { img: imagen39, alt: "Tour por las ruinas de Chan Chan" },
+  { img: imagen39, alt: "Experiencia de senderismo en Huaraz" },
+  { img: imagen39, alt: "Viaje por las lagunas de Huascarán" },
+  { img: imagen39, alt: "Aventura en la Reserva Nacional de Tambopata" },
+  { img: imagen39, alt: "Tour por las comunidades caravaneras del lago Junín" },
+  { img: imagen39, alt: "Experiencia cultural en comunidades nativas" },
+  { img: imagen39, alt: "Viaje de aventura en el Manu" },
+  { img: imagen39, alt: "Tour de gastronomía Peruana en Lima" },
+  { img: imagen39, alt: "Aventura en el Tren a Machu Picchu" },
+  { img: imagen39, alt: "Clientes satisfechos regreso del Valle Sagrado" },
+  { img: imagen39, alt: "Experiencia única en las termas de Chivay" },
+  { img: imagen39, alt: "Viaje grupal por las maravillas del Perú y Bolivia" },
+];
+---
+
+<div class="grid grid-cols-3 gap-3 mb-12">
+  {
+    galleryItems.slice(0, totalImages).map((item, index) => (
+      <button
+        type="button"
+        class="relative overflow-hidden group cursor-pointer rounded-sm aspect-square w-full !p-0 border-0"
+        style={`background-image: url('${item.img.src}'); background-size: cover !important; background-position: center; background-repeat: no-repeat;`}
+        data-src={item.img.src}
+        data-alt={item.alt}
+        onclick={`openLightbox(${index})`}
+      >
+        {/* Gradient overlay */}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+        {/* Zoom icon */}
+        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div class="w-12 h-12 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center">
+            <svg
+              class="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+              />
+            </svg>
+          </div>
+        </div>
+      </button>
+    ))
+  }
+</div>
+
+{/* Lightbox Modal */}
+<div
+  id="lightbox"
+  class="fixed inset-0 bg-black/95 z-50 hidden items-center justify-center p-4"
+  role="dialog"
+  aria-modal="true"
+>
+  <button
+    type="button"
+    class="absolute top-4 right-4 text-white/80 hover:text-white text-5xl font-light hover:scale-110 transition-all cursor-pointer z-50 w-12 h-12 flex items-center justify-center"
+    onclick="closeLightbox()"
+    aria-label="Close lightbox"
+  >
+    &times;
+  </button>
+
+  {/* Navigation arrows */}
+  <button
+    type="button"
+    class="absolute left-4 text-white/60 hover:text-white p-3 hover:bg-white/10 rounded-full transition-all z-50"
+    onclick="navigateLightbox(-1)"
+    aria-label="Previous image"
+  >
+    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M15 19l-7-7 7-7"></path>
+    </svg>
+  </button>
+
+  <button
+    type="button"
+    class="absolute right-4 text-white/60 hover:text-white p-3 hover:bg-white/10 rounded-full transition-all z-50"
+    onclick="navigateLightbox(1)"
+    aria-label="Next image"
+  >
+    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M9 5l7 7-7 7"></path>
+    </svg>
+  </button>
+
+  <img
+    id="lightbox-img"
+    src=""
+    alt="Full size image"
+    class="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+  />
+
+  <div
+    class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/70 text-sm"
+    id="lightbox-counter"
+  >
+  </div>
+</div>
+
+<script is:inline>
+  let currentIndex = 0;
+  const totalImages = 20;
+
+  function openLightbox(index) {
+    currentIndex = index;
+    const button = document.querySelector(
+      `button[onclick="openLightbox(${index})"]`,
+    );
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImg = document.getElementById("lightbox-img");
+    const counter = document.getElementById("lightbox-counter");
+
+    if (button && lightbox && lightboxImg) {
+      const src = button.getAttribute("data-src");
+      const alt = button.getAttribute("data-alt");
+      lightboxImg.src = src;
+      lightboxImg.alt = alt;
+      counter.textContent = `${index + 1} / ${totalImages}`;
+      lightbox.classList.remove("hidden");
+      lightbox.classList.add("flex");
+      document.body.style.overflow = "hidden";
+    }
+  }
+
+  function closeLightbox() {
+    const lightbox = document.getElementById("lightbox");
+    if (lightbox) {
+      lightbox.classList.add("hidden");
+      lightbox.classList.remove("flex");
+      document.body.style.overflow = "";
+    }
+  }
+
+  function navigateLightbox(direction) {
+    currentIndex = (currentIndex + direction + totalImages) % totalImages;
+    openLightbox(currentIndex);
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeLightbox();
+    if (e.key === "ArrowLeft") navigateLightbox(-1);
+    if (e.key === "ArrowRight") navigateLightbox(1);
+  });
+</script>

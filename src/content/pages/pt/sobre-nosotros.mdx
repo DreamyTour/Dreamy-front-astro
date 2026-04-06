@@ -1,0 +1,108 @@
+---
+title: "Sobre Nós"
+description: "Sobre Nós - Turismo Perú Bolivia"
+lang: "pt"
+seo:
+  metaTitle: "Sobre Nós | Turismo Perú Bolivia"
+  metaDescription: "Sobre Nós - Turismo Perú Bolivia"
+---
+import TeamCard from "@/components/ui/TeamCard.astro";
+
+# Sobre Nós
+
+Somos uma agência de viagens especializada em tours pelo Peru e Bolivia, com mais de 15 anos de experiência.
+
+## Nossa História
+
+Fundada com a missão de mostrar as maravilhas do Peru e Bolivia ao mundo, crescemos para nos tornar um dos operadores turísticos mais confiáveis da região.
+
+## Nossa Missão
+
+Proporcionar experiências de viagem autênticas, seguras e sustentáveis que conectem os viajantes com a riqueza cultural e natural do Peru e da Bolivia.
+
+## Valores
+
+- **Paixão**: Amamos o que fazemos
+- **Integridade**: Operamos com honestidade e transparência
+- **Excelência**: Buscamos a perfeição em cada detalhe
+- **Sustentabilidade**: Respeitamos o meio ambiente e as comunidades locais
+
+{/* Our Team Section */}
+<section class="py-24 bg-white">
+  <div class="px-6 md:px-12 max-w-7xl mx-auto">
+    <div class="text-center mb-16">
+      <span class="text-primary font-bold tracking-widest uppercase text-sm">Nossos Profissionais</span>
+      <h2 class="text-3xl md:text-4xl font-extrabold text-foreground mt-2">Conheça Nossa Equipe</h2>
+      <p class="text-muted-foreground mt-4 max-w-2xl mx-auto">
+        Uma equipe altamente treinada comprometida em tornar sua experiência de viagem inesquecível.
+      </p>
+    </div>
+
+    {/* Administração - 1 */}
+    <div class="mb-12">
+      <h3 class="text-lg font-bold text-foreground mb-6 flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+        Administração
+        <span class="text-sm font-normal text-muted-foreground">(1)</span>
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <TeamCard name="Maria Elena Garcia" role="Gerente Geral" department="Administración" />
+      </div>
+    </div>
+
+    {/* Vendas - 3 */}
+    <div class="mb-12">
+      <h3 class="text-lg font-bold text-foreground mb-6 flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+        Vendas
+        <span class="text-sm font-normal text-muted-foreground">(3)</span>
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <TeamCard name="Carlos Mendoza" role="Chefe de Vendas" department="Ventas" />
+        <TeamCard name="Ana Lucia Quispe" role="Consultora de Viagens" department="Ventas" />
+        <TeamCard name="Roberto Huanca" role="Assistente de Reservas" department="Ventas" />
+      </div>
+    </div>
+
+    {/* Finanças - 2 */}
+    <div class="mb-12">
+      <h3 class="text-lg font-bold text-foreground mb-6 flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+        Finanças
+        <span class="text-sm font-normal text-muted-foreground">(2)</span>
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <TeamCard name="Patricia Flores" role="Contadora" department="Finanzas" />
+        <TeamCard name="Luis Alberto Ramos" role="Assistente Financeiro" department="Finanzas" />
+      </div>
+    </div>
+
+    {/* Transfer - 2 */}
+    <div class="mb-12">
+      <h3 class="text-lg font-bold text-foreground mb-6 flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-violet-500"></span>
+        Transfer
+        <span class="text-sm font-normal text-muted-foreground">(2)</span>
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <TeamCard name="Jorge Luis Diaz" role="Coordenador de Transfer" department="Transfer" />
+        <TeamCard name="Walter Ccoscco" role="Operador de Frota" department="Transfer" />
+      </div>
+    </div>
+
+    {/* Sistemas - 4 */}
+    <div class="mb-12">
+      <h3 class="text-lg font-bold text-foreground mb-6 flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+        Sistemas
+        <span class="text-sm font-normal text-muted-foreground">(4)</span>
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <TeamCard name="Kevin Rodriguez" role="Desenvolvedor Web" department="Sistemas" />
+        <TeamCard name="Diego Fernando" role="Suporte Técnico" department="Sistemas" />
+        <TeamCard name="Alexis Puma" role="Especialista TI" department="Sistemas" />
+        <TeamCard name="César Huillca" role="Administrador de Sistemas" department="Sistemas" />
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,12 +1,22 @@
 ---
 import "../styles/global.css";
 import "@fontsource-variable/outfit";
+import { ClientRouter } from "astro:transitions";
 
 import fetchApi from "@/lib/strapi";
 import type { Global } from "@/interface/global";
 import { LANGS, DEFAULT_LANG, isValidLang } from "@/lib/i18n";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
+import { rewriteMenuUrls } from "@/lib/utils";
+import SEO from "@/components/SEO.astro";
+import type { SEOProps } from "@/components/SEO.astro";
+
+interface Props {
+  seo?: SEOProps;
+}
+
+const { seo } = Astro.props;
 
 // 1. Detectamos el idioma desde los params de la vista de forma automática
 const currentLang = isValidLang(Astro.params.lang)
@@ -14,14 +24,46 @@ const currentLang = isValidLang(Astro.params.lang)
 	: DEFAULT_LANG;
 
 // 2. Obtenemos toda la data de la barra superior/footer y se la inyectamos
-const globalData = await fetchApi<Global>({
+const globalDataRaw = await fetchApi<Global>({
 	endpoint: "global",
 	wrappedByKey: "data",
 	query: {
 		locale: currentLang,
-		populate: "deep", // Puedes poner este nivel de profundidad aquí
+		populate: {
+			footer: {
+				populate: {
+					socialLogo: {
+						populate: ["imagen"],
+					},
+					logo: {
+						populate: ["imagen"],
+					},
+					certificaciones: {
+						populate: {
+							premios: {
+								populate: ["logo"],
+							},
+						},
+					},
+				},
+			},
+		},
 	},
 });
+
+// 3. Reescribimos las URLs del menú para que coincidan con el idioma actual
+const globalData = rewriteMenuUrls(globalDataRaw, currentLang);
+
+// Default SEO values
+const defaultTitle = "Turismo Perú Bolivia - Tours y Paquetes Turísticos";
+const defaultDescription = "Explora los mejores tours y paquetes turísticos en Perú y Bolivia. Machu Picchu, Lago Titicaca, salar de Uyuni y más.";
+
+const seoProps = seo || {
+  title: defaultTitle,
+  description: defaultDescription,
+  type: "website" as const,
+  lang: currentLang,
+};
 ---
 
 <html lang={currentLang}>
@@ -29,12 +71,19 @@ const globalData = await fetchApi<Global>({
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<ClientRouter />
+		<SEO {...seoProps} />
 	</head>
 	<body>
+		<!-- Skip Link para accesibilidad (WCAG 2.4.1) -->
+		<a href="#main-content" class="skip-link">
+			Saltar al contenido principal
+		</a>
+		
 		<Header data={globalData} lang={currentLang} />
-		<main>
+		<main id="main-content">
 			<slot />
 		</main>
-		<Footer lang={currentLang} />
+		<Footer data={globalData?.footer} />
 	</body>
 </html>

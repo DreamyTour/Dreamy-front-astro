@@ -8,7 +8,9 @@ import Certifications from "@/section/Certifications.astro";
 import Machupicchu from "@/section/Machupicchu.astro";
 import PaquetesPeru from "@/section/PaquetesPeru.astro";
 import PaquetesBolivia from "@/section/PaquetesBolivia.astro";
+import HomePost from "@/section/HomePost.astro";
 import { LANGS, DEFAULT_LANG, isValidLang } from "@/lib/i18n";
+import { buildSEOProps } from "@/lib/seo";
 
 export function getStaticPaths() {
   return LANGS.map((lang) => ({
@@ -25,23 +27,30 @@ const homeData = await fetchApi<Home>({
     locale: lang,
     "populate[hero][populate]": "*",
     "populate[about][populate]": "*",
-    "populate[premios][populate]": "*",
+    "populate[premios][populate][logo]": "*",
     "populate[sectionMapi][populate][category]": "*",
     "populate[peruPaquetes][populate][category]": "*",
     "populate[boliviaPaquetes][populate][category]": "*",
+    "populate[cardPost]": "*",
   },
 });
 
-console.log("Home data keys:", Object.keys(homeData || {}));
-console.log("SectionMapi data:", homeData?.sectionMapi);
-console.log("peruPaquetes data:", homeData?.peruPaquetes);
+const seoProps = buildSEOProps({
+  seo: homeData?.seo,
+  fallbackTitle: "Turismo Perú Bolivia - Tours y Paquetes Turísticos",
+  fallbackDescription:
+    "Organiza tu viaje a Perú y Bolivia con los mejores tours: Machu Picchu, Lago Titicaca, Salar de Uyuni y más. Paquetes turísticos completos.",
+  type: "website",
+  lang,
+});
 ---
 
-<Layout>
+<Layout seo={seoProps}>
   <Hero data={homeData?.hero} lang={lang} />
   <About data={homeData?.about} lang={lang} />
   <Certifications data={homeData?.premios?.premios} lang={lang} />
   <Machupicchu data={homeData?.sectionMapi} lang={lang} />
   <PaquetesPeru data={homeData?.peruPaquetes} lang={lang} />
   <PaquetesBolivia data={homeData?.boliviaPaquetes} lang={lang} />
+  <HomePost data={homeData?.cardPost} lang={lang} />
 </Layout>

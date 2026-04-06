@@ -2,7 +2,7 @@
  * Interfaces para el singleType Global de Strapi (header, topbar, menu).
  */
 
-import type { Link, Logo } from "./common";
+import type { Link, Logo, Imagen } from "./common";
 
 // Re-exportar tipos comunes para retrocompatibilidad
 export type { Imagen, Link, Logo, StrapiResponse } from "./common";
@@ -49,16 +49,27 @@ export interface Contact {
   titulo: string;
   link: Link[];
 }
+export interface Premio {
+  id: number;
+  description: string;
+  logo: Imagen;
+}
+
+export interface Certifications {
+  id: number;
+  premios: Premio[];
+}
 
 export interface Footer {
   id: number;
-  imagen: Logo;
+  logo: Logo;
   content: string;
   socialTitle: string;
   socialLogo: Logo[];
   destination: Destination;
   dreamyAbout: DreamyAbout;
   contact: Contact;
+  certificaciones: Certifications;
 }
 
 export interface Global {

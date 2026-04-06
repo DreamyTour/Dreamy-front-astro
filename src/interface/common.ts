@@ -30,6 +30,14 @@ export interface Logo {
   imagen: Imagen;
 }
 
+/** shared.seo — metadatos SEO reutilizables de Strapi */
+export interface SEO {
+  metaTitle: string;
+  metaDescription: string;
+  metaImage?: Imagen | null;
+  keywords?: string | null;
+}
+
 /** Wrapper genérico de respuesta de la API de Strapi */
 export interface StrapiResponse<T> {
   data: T;

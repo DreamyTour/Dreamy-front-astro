@@ -19,7 +19,20 @@ const strapiUrl = import.meta.env.VITE_STRAPI_URL?.replace(/\/$/, "");
 const sliderData = [...premios, ...premios];
 ---
 
-<section class="slider-container mx-auto max-w-7xl px-6 py-16">
+<section class="slider-container mx-auto max-w-8xl px-6 py-16">
+  <div class="text-center mb-10">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 relative inline-block">
+      <span class="relative z-10">Premios y Certificaciones</span>
+      <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-secondary/30 -z-0 rounded-full blur-sm" />
+    </h2>
+    <div class="flex items-center justify-center gap-3 mt-4">
+      <div class="h-[1px] w-16 bg-gradient-to-r from-transparent to-secondary" />
+      <div class="w-12 h-1.5 bg-secondary rounded-full relative">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full" />
+      </div>
+      <div class="h-[1px] w-16 bg-gradient-to-l from-transparent to-secondary" />
+    </div>
+  </div>
   <div class="slider-track w-full">
     {
       sliderData.map((cert) => {
@@ -28,7 +41,13 @@ const sliderData = [...premios, ...premios];
         return (
           <div class="slide" title={cert.description}>
             {imageUrl && (
-              <img src={imageUrl} alt={cert.description} loading="lazy" />
+              <img 
+                src={imageUrl} 
+                alt={cert.description} 
+                loading="lazy"
+                width={cert.logo?.width}
+                height={cert.logo?.height}
+              />
             )}
           </div>
         );
@@ -78,6 +97,17 @@ const sliderData = [...premios, ...premios];
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+  }
+
+  .slide:hover {
+    transform: translateY(-8px);
+    border-color: #4a5d4e;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   }
 
   .slide img {
@@ -85,13 +115,11 @@ const sliderData = [...premios, ...premios];
     max-height: 120px; /* Alto máximo para los logos */
     object-fit: contain;
     /* Opcional: logos en grisáceo que se colorean al pasar el mouse */
-    filter: grayscale(100%);
     opacity: 0.7;
     transition: all 0.3s ease;
   }
 
-  .slide img:hover {
-    filter: grayscale(0%);
+  .slide:hover img {
     opacity: 1;
   }
 

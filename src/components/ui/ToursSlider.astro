@@ -1,0 +1,102 @@
+---
+import type { Tour } from "@/interface/tours";
+import type { Lang } from "@/lib/i18n";
+import TourCard from "@/components/ui/TourCard.astro";
+
+interface Props {
+  tours: Tour[];
+  lang: Lang;
+}
+
+const { tours, lang } = Astro.props;
+---
+
+<div class="relative">
+  <!-- Slider Container - horizontal scroll -->
+  <div
+    class="flex gap-6 overflow-x-auto py-4 snap-x snap-mandatory scrollbar-hide"
+    id={`slider-${Math.random().toString(36).substr(2, 9)}`}
+  >
+    {
+      tours.map((tour) => (
+        <div class="flex-shrink-0 w-[85%] md:w-[45%] lg:w-[31%] snap-center">
+          <TourCard tour={tour} lang={lang} />
+        </div>
+      ))
+    }
+  </div>
+
+  <!-- Navigation Arrows -->
+  <button
+    class="slider-prev absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    aria-label="Ver tours anteriores"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="w-6 h-6 text-gray-700"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"
+      ></path>
+    </svg>
+  </button>
+
+  <button
+    class="slider-next absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    aria-label="Ver siguientes tours"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="w-6 h-6 text-gray-700"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"
+      ></path>
+    </svg>
+  </button>
+</div>
+
+<style>
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const sliders = document.querySelectorAll("[id^='slider-']");
+
+    sliders.forEach((slider) => {
+      const container = slider as HTMLElement;
+      const prevBtn = container.parentElement?.querySelector(
+        ".slider-prev",
+      ) as HTMLButtonElement;
+      const nextBtn = container.parentElement?.querySelector(
+        ".slider-next",
+      ) as HTMLButtonElement;
+
+      if (!prevBtn || !nextBtn) return;
+
+      const scrollAmount = container.offsetWidth;
+
+      prevBtn.addEventListener("click", () => {
+        container.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+      });
+
+      nextBtn.addEventListener("click", () => {
+        container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+      });
+    });
+  });
+</script>

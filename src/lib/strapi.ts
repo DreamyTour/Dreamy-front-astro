@@ -1,6 +1,6 @@
 interface Props {
   endpoint: string;
-  query?: Record<string, string>;
+  query?: Record<string, any>;
   wrappedByKey?: string;
   wrappedByList?: boolean;
   locale?: string; // 👈 NUEVO
@@ -28,10 +28,14 @@ export default async function fetchApi<T>({
 
   const url = new URL(`/api/${endpoint}`, baseUrl);
 
-  // 🔹 Query params normales
+  // 🔹 Query params - maneja objetos anidados para populate
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
-      url.searchParams.append(key, value);
+      if (typeof value === "object") {
+        url.searchParams.append(key, JSON.stringify(value));
+      } else {
+        url.searchParams.append(key, value);
+      }
     });
   }
 

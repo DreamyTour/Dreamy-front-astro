@@ -1,0 +1,122 @@
+---
+import type { Lang } from "@/lib/i18n";
+import { getStrapiUrl } from "@/lib/helpers";
+
+interface Category {
+  slug: string;
+  nombre: string;
+}
+
+interface SocialLogo {
+  url: string;
+  label?: string;
+  imagen?: {
+    url: string;
+  };
+}
+
+interface Props {
+  categories: Category[];
+  currentSlug?: string;
+  lang: Lang;
+  socialLogos?: SocialLogo[];
+}
+
+const { categories, currentSlug, lang, socialLogos = [] } = Astro.props;
+
+const strapiUrl = getStrapiUrl();
+
+const formatUrl = (url: string) => url?.startsWith("http") ? url : `https://${url}`;
+---
+
+<aside class="hidden lg:block lg:w-[30%] xl:w-[25%] shrink-0">
+  <div class="sticky top-28 bg-white border border-t-4 border-t-primary border-gray-100 rounded-sm p-8 shadow-sm">
+    {/* Categorías */}
+    <h3 class="font-bold text-gray-900 mb-6 uppercase tracking-wider text-xs">
+      {
+        lang === "es"
+          ? "Categorías"
+          : lang === "pt"
+            ? "Categorias"
+            : "Categories"
+      }
+    </h3>
+    <div class="flex flex-col space-y-1">
+      <a
+        href={`/${lang}/blog`}
+        class={`px-4 py-2.5 rounded-sm text-sm font-medium transition-all flex items-center justify-between border border-transparent
+          ${!currentSlug 
+            ? "bg-primary/10 text-primary font-semibold" 
+            : "text-gray-600 hover:text-primary hover:bg-gray-50"
+          }`}
+      >
+        <span>
+          {
+            lang === "es"
+              ? "Ver Todos"
+              : lang === "pt"
+                ? "Ver Todos"
+                : "View All"
+          }
+        </span>
+        {!currentSlug && <div class="w-1.5 h-1.5 rounded-full bg-primary" />}
+      </a>
+      
+      {
+        categories.map((cat: Category) => {
+          const isActive = currentSlug === cat.slug;
+          return (
+            <a
+              href={`/${lang}/blog/${cat.slug}`}
+              class={`px-4 py-2.5 rounded-sm text-sm font-medium transition-all flex items-center justify-between border border-transparent
+                ${
+                  isActive
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-gray-600 hover:text-primary hover:bg-gray-50"
+                }`}
+            >
+              <span>{cat.nombre}</span>
+              {isActive && <div class="w-1.5 h-1.5 rounded-full bg-primary" />}
+            </a>
+          );
+        })
+      }
+    </div>
+
+    {/* Redes Sociales */}
+    {
+      Array.isArray(socialLogos) && socialLogos.length > 0 && (
+        <div class="pt-6 mt-6 border-t border-gray-100">
+          <h3 class="font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">
+            {lang === "es"
+              ? "Compartir"
+              : lang === "pt"
+                ? "Compartilhar"
+                : "Share"}
+          </h3>
+          <div class="flex flex-wrap gap-3">
+            {socialLogos.map((social: SocialLogo) => (
+              <a
+                href={formatUrl(social.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group flex items-center gap-3 px-4 py-3 rounded-sm bg-primary hover:bg-green-900 hover:scale-105 transition-all duration-300 w-full"
+              >
+                {social.imagen?.url && (
+                  <img
+                    src={`${strapiUrl}${social.imagen.url}`}
+                    alt={social.label || "Social"}
+                    class="h-8 w-8 object-contain"
+                  />
+                )}
+                <span class="text-sm font-medium text-white">
+                  {social.label || "Social"}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )
+    }
+  </div>
+</aside>

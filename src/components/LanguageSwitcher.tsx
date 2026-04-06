@@ -28,11 +28,11 @@ export function LanguageSwitcher({ currentLang }: { currentLang: Lang }) {
     let newPathname = pathname;
 
     // Buscar mapa de slugs para tours localizados
-    const slugMapEl = document.getElementById("tour-slug-map");
-    if (slugMapEl) {
+    const tourSlugMapEl = document.getElementById("tour-slug-map");
+    if (tourSlugMapEl) {
       try {
         const slugMap: Record<string, string> = JSON.parse(
-          slugMapEl.textContent ?? "{}"
+          tourSlugMapEl.textContent ?? "{}"
         );
         const targetSlug = slugMap[val];
         if (targetSlug) {
@@ -43,16 +43,49 @@ export function LanguageSwitcher({ currentLang }: { currentLang: Lang }) {
       } catch { }
     }
 
+    // Buscar mapa de slugs para páginas localizadas
+    const pageSlugMapEl = document.getElementById("page-slug-map");
+    if (pageSlugMapEl) {
+      try {
+        const slugMap: Record<string, string> = JSON.parse(
+          pageSlugMapEl.textContent ?? "{}"
+        );
+        const targetSlug = slugMap[val];
+        if (targetSlug) {
+          newPathname = `/${val}/${targetSlug}`;
+          window.location.href = newPathname;
+          return;
+        }
+      } catch { }
+    }
+
+    // Buscar mapa de slugs para posts del blog localizados
+    const blogSlugMapEl = document.getElementById("blog-slug-map");
+    if (blogSlugMapEl) {
+      try {
+        const slugMap: Record<string, string> = JSON.parse(
+          blogSlugMapEl.textContent ?? "{}"
+        );
+        const targetSlug = slugMap[val];
+        if (targetSlug) {
+          // Cambiar tanto el prefijo de idioma como el slug: /es/blog/completo3 -> /en/blog/complete3
+          const currentLangMatch = pathname.match(/^\/([^/]+)(\/.*)$/);
+          if (currentLangMatch) {
+            newPathname = `/${val}${currentLangMatch[2].replace(/\/blog\/[^/]+$/, `/blog/${targetSlug}`)}`;
+          }
+          window.location.href = newPathname;
+          return;
+        }
+      } catch { }
+    }
+
     // Fallback: reemplazar solo el prefijo de idioma
     const currentPrefix = LANGS.find(l => pathname.startsWith(`/${l}`) && (pathname.length === l.length + 1 || pathname.charAt(l.length + 1) === '/'));
 
     if (currentPrefix) {
-      newPathname = pathname.replace(`/${currentPrefix}`, val === 'en' ? '' : `/${val}`);
-      if (newPathname === '') newPathname = '/';
+      newPathname = pathname.replace(`/${currentPrefix}`, `/${val}`);
     } else {
-      if (val !== 'en') {
-        newPathname = `/${val}${pathname === '/' ? '' : pathname}`;
-      }
+      newPathname = `/${val}${pathname === '/' ? '' : pathname}`;
     }
 
     window.location.href = newPathname;
@@ -63,6 +96,7 @@ export function LanguageSwitcher({ currentLang }: { currentLang: Lang }) {
       <Combobox
         value={value}
         onValueChange={(val) => handleValueChange(val as string)}
+        aria-label="Seleccionar idioma"
       >
         <ComboboxInput
           readOnly
@@ -70,6 +104,7 @@ export function LanguageSwitcher({ currentLang }: { currentLang: Lang }) {
           showClear={false}
           value={languageNames[value as Lang]}
           className="cursor-pointer bg-white border shadow-sm"
+          aria-label="Idioma actual"
         />
         <ComboboxContent align="end" sideOffset={4}>
           <ComboboxList>

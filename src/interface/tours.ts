@@ -1,10 +1,30 @@
-import type { Imagen } from "./common";
+import type { Imagen, SEO } from "./common";
+
+// Tipo para bloques de Strapi v5
+export interface StrapiBlock {
+  type: string;
+  version?: number;
+  children?: StrapiBlockChild[];
+  [key: string]: unknown;
+}
+
+export interface StrapiBlockChild {
+  type: string;
+  text?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+  code?: string;
+  url?: string;
+  children?: StrapiBlockChild[];
+}
 
 export interface Badge {
   titulo: string;
   content: string;
   icono: Imagen;
-}``
+}
 
 export interface Timeline {
   day: string;
@@ -13,7 +33,7 @@ export interface Timeline {
 }
 export interface Acordeon {
   titulo: string;
-  content: string;
+  contenido: StrapiBlock[];
 }
 
 export interface Overview {
@@ -26,7 +46,7 @@ export interface Itinerary {
 }
 export interface Included {
   titulo: string;
-  content: string;
+  contenido: StrapiBlock[];
 }
 export interface Information {
   titulo: string;
@@ -34,7 +54,7 @@ export interface Information {
 }
 export interface Price {
   titulo: string;
-  content: string;
+  contenido: StrapiBlock[]; // blocks ( Strapi v5)
 }
 
 export interface Tab {
@@ -45,13 +65,22 @@ export interface Tab {
   price: Price;
 }
 
+export interface Category {
+  id: number;
+  nombre: string;
+  slug: string;
+}
+
 export interface Tour {
   id: number;
   documentId: string;
   titulo: string;
   content: string;
   slug: string;
-  imagenDestacada: Imagen;
+  priceTour?: number;
+  imagenDestacada: Imagen[];
   badge: Badge[];
   tab: Tab;
+  categories: Category[];
+  seo?: SEO;
 }

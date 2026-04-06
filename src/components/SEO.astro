@@ -1,0 +1,224 @@
+---
+import type { Lang } from "@/lib/i18n";
+import { LANGS, DEFAULT_LANG } from "@/lib/i18n";
+
+export interface SEOProps {
+  title: string;
+  description?: string;
+  image?: string;
+  keywords?: string;
+  type?: "website" | "article";
+  lang?: Lang;
+  canonicalUrl?: string;
+  publishedTime?: string;
+  author?: string;
+  slugMap?: Record<string, string>; // Para traducciones de slug en hreflang
+}
+
+const {
+  title,
+  description = "Explora los mejores tours y paquetes turísticos en Perú y Bolivia. Machu Picchu, Lago Titicaca, salar de Uyuni y más.",
+  image = "/og-default.jpg",
+  keywords,
+  type = "website",
+  lang = DEFAULT_LANG,
+  canonicalUrl,
+  publishedTime,
+  author,
+  slugMap,
+} = Astro.props;
+
+//Get site URL from astro.config
+const siteUrl = Astro.site?.origin || "https://turismo-peru-bolivia.com";
+
+// Generate canonical URL
+const currentPath = Astro.url.pathname;
+const canonical = canonicalUrl || `${siteUrl}${currentPath}`;
+
+// Generate full image URL
+const fullImageUrl = image.startsWith("http") ? image : `${siteUrl}${image}`;
+
+function translatePathForSlug(
+  path: string,
+  translatedSlug: string,
+  targetLang: string,
+): string {
+  if (path.includes("/blog/")) {
+    const blogPath = path.replace(
+      /\/blog\/[^/]+(?=\/|$)/,
+      `/blog/${translatedSlug}`,
+    );
+    return blogPath.replace(/^\/(en|es|pt)/, `/${targetLang}`);
+  }
+
+  const langMatch = path.match(/^\/(en|es|pt)(\/.*)$/);
+  if (langMatch) {
+    const rest = langMatch[2];
+    const translatedRest = rest.replace(
+      /\/[^/]+(?=\/|$)/,
+      `/${translatedSlug}`,
+    );
+    return `/${targetLang}${translatedRest}`;
+  }
+
+  return path.replace(/^\/(en|es|pt)/, `/${targetLang}`);
+}
+
+// Get alternate language URLs for hreflang
+const alternateUrls = LANGS.map((alternateLang) => {
+  let urlPath = currentPath;
+  
+  // Si hay un slugMap, usarlo para traducir el slug
+  if (slugMap && slugMap[alternateLang]) {
+    urlPath = translatePathForSlug(urlPath, slugMap[alternateLang], alternateLang);
+  } else {
+    // Reemplazar el prefijo de idioma
+    urlPath = urlPath.replace(/^\/(en|es|pt)/, `/${alternateLang}`);
+  }
+  
+  return {
+    lang: alternateLang,
+    url: `${siteUrl}${urlPath}`,
+  };
+});
+
+// Calcular x-default (versión inglés sin prefijo de idioma)
+let xDefaultPath = currentPath;
+if (slugMap && slugMap["en"]) {
+  xDefaultPath = translatePathForSlug(xDefaultPath, slugMap["en"], "en");
+}
+const xDefaultUrl = `${siteUrl}${xDefaultPath.replace(/^\/(en|es|pt)/, "")}`;
+
+// Schema.org JSON-LD
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "TravelAgency",
+  "name": "Turismo Perú Bolivia",
+  "description": description || "Agencia de tours y paquetes turísticos en Perú y Bolivia",
+  "url": siteUrl,
+  "logo": `${siteUrl}/logo.png`,
+  "image": fullImageUrl,
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "PE",
+    "addressLocality": "Cusco",
+    "addressRegion": "Cusco"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+51999999999",
+    "contactType": "reservations",
+    "availableLanguage": ["Spanish", "English", "Portuguese"]
+  },
+  "sameAs": [
+    "https://www.facebook.com/turismoperubolivia",
+    "https://www.instagram.com/turismoperubolivia",
+    "https://wa.me/51999999999"
+  ]
+};
+
+// Breadcrumb schema
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Inicio",
+      "item": siteUrl
+    }
+  ]
+};
+
+// Add current page to breadcrumb if not home
+if (currentPath !== "/") {
+  const currentPage = title.split(" - ")[0] || title;
+  breadcrumbSchema.itemListElement.push({
+    "@type": "ListItem",
+    "position": 2,
+    "name": currentPage,
+    "item": canonical
+  });
+}
+
+// Article schema for blog posts
+const articleSchema = type === "article" ? {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": title,
+  "description": description,
+  "image": fullImageUrl,
+  "datePublished": publishedTime,
+  "author": {
+    "@type": "Organization",
+    "name": author || "Turismo Perú Bolivia"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Turismo Perú Bolivia",
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${siteUrl}/logo.png`
+    }
+  }
+} : null;
+---
+
+<!-- Canonical URL -->
+<link rel="canonical" href={canonical} />
+
+<!-- Alternate Languages (hreflang) -->
+{alternateUrls.map((alt) => (
+  <link rel="alternate" hreflang={alt.lang} href={alt.url} />
+))}
+
+<!-- Default to English if no hreflang matches -->
+<link rel="alternate" hreflang="x-default" href={xDefaultUrl} />
+
+<!-- Primary Meta Tags -->
+<title>{title}</title>
+<meta name="title" content={title} />
+{description && <meta name="description" content={description} />}
+{keywords && <meta name="keywords" content={keywords} />}
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonical} />
+<meta property="og:title" content={title} />
+{description && <meta property="og:description" content={description} />}
+<meta property="og:image" content={fullImageUrl} />
+<meta property="og:locale" content={lang} />
+
+{/* Alternate locales for OG */}
+{alternateUrls.map((alt) => (
+  <meta property="og:locale:alternate" content={alt.lang} />
+))}
+
+{/* Article specific meta tags */}
+{type === "article" && (
+  <>
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {author && <meta property="article:author" content={author} />}
+  </>
+)}
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content={canonical} />
+<meta property="twitter:title" content={title} />
+{description && <meta property="twitter:description" content={description} />}
+<meta property="twitter:image" content={fullImageUrl} />
+
+<!-- Additional SEO -->
+<meta name="author" content={author || "Turismo Perú Bolivia"} />
+<meta name="robots" content="index, follow" />
+<meta name="googlebot" content="index, follow" />
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+<!-- Schema.org JSON-LD -->
+<script type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
+<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+{articleSchema && <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />}

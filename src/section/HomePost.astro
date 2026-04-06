@@ -1,0 +1,94 @@
+---
+import fetchApi from "@/lib/strapi";
+import type { Blog } from "@/interface/blog";
+import type { Lang } from "@/lib/i18n";
+import type { sectionCardPost } from "@/interface/home";
+import { useTranslations } from "@/i18n/ui";
+import CardPost from "@/components/ui/CardPost.astro";
+
+interface Props {
+  data: sectionCardPost;
+  lang: Lang;
+}
+
+const { data, lang } = Astro.props;
+
+const t = useTranslations(lang);
+
+if (!data || !data.titulo) return;
+
+// Fetch posts más recientes
+const posts = await fetchApi<Blog[]>({
+  endpoint: "posts",
+  wrappedByKey: "data",
+  locale: lang,
+  query: {
+    //"populate[portadaImage]": "*",
+    //"populate[category_blogs]": "*",
+    sort: "publishedAt:desc",
+    "pagination[limit]": data.limit || 6,
+  },
+});
+
+const postsList = posts && Array.isArray(posts) ? posts : [];
+---
+
+{
+  postsList.length > 0 && (
+    <section class="w-full py-20 md:py-28 bg-white">
+      <div class="max-w-8xl mx-auto px-6">
+        {/* Header */}
+        <div class="mb-14 md:mb-20 text-center">
+          {data.titulo && (
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 relative inline-block">
+              <span class="relative z-10">{data.titulo}</span>
+              <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-secondary/30 -z-0 rounded-full blur-sm" />
+            </h2>
+          )}
+          <div class="flex items-center justify-center gap-3 mt-4">
+            <div class="h-[1px] w-16 bg-gradient-to-r from-transparent to-secondary" />
+            <div class="w-12 h-1.5 bg-secondary rounded-full relative">
+              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full" />
+            </div>
+            <div class="h-[1px] w-16 bg-gradient-to-l from-transparent to-secondary" />
+          </div>
+          {data.description && (
+            <p class="mt-6 text-gray-600 max-w-2xl mx-auto">
+              {data.description}
+            </p>
+          )}
+        </div>
+
+        {/* Grid de Posts */}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-x-8 md:gap-y-16">
+          {postsList.map((blog: Blog) => (
+            <CardPost blog={blog} lang={lang} />
+          ))}
+        </div>
+
+        {/* Botón ver más */}
+        <div class="text-center mt-12">
+          <a
+            href={`/${lang}/blog`}
+            aria-label={t("aria.verMasSeccion")}
+            class="inline-flex items-center gap-2 px-12 py-5 bg-transparent text-secondary font-bold text-lg rounded-full border-2 border-secondary hover:bg-secondary hover:text-white transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+          >
+            {t("section.verTodoArticulos")}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-6 h-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  )
+}

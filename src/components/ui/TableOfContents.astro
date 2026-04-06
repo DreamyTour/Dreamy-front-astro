@@ -1,0 +1,36 @@
+---
+interface Props {
+  headings: { id: string; text: string }[];
+}
+
+const { headings } = Astro.props;
+
+// Only show TOC if there are headings
+const hasHeadings = headings && headings.length > 0;
+---
+
+{hasHeadings && (
+  <nav class="toc bg-gray-50 dark:bg-gray-900/50 rounded-sm p-5 mb-8 border border-gray-100 dark:border-gray-800">
+    <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
+      Tabla de Contenidos
+    </h3>
+    <ul class="space-y-2">
+      {headings.map((heading) => (
+        <li>
+          <a
+            href={`#${heading.id}`}
+            class="block text-sm text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors duration-200 py-1.5 pl-3 border-l-2 border-transparent hover:border-primary"
+          >
+            {heading.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
+
+<style>
+  .toc a {
+    scroll-margin-top: 100px;
+  }
+</style>

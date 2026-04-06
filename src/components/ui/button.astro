@@ -15,9 +15,9 @@ const rel = isExternal ? "noopener noreferrer" : undefined;
 const classes =
   type === "PRIMARY"
     ? "inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 bg-secondary text-white hover:bg-secondary/85 hover:shadow-lg hover:shadow-secondary/25"
-    : "inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 bg-foreground/80 text-white border border-white/20 hover:bg-foreground/90 hover:shadow-lg";
+    : "inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-300 bg-[#2a2624] !text-white border border-white/20 hover:bg-[#3a3634] hover:shadow-lg";
 ---
 
-<a href={href} target={target} rel={rel} class={classes}>
+<a href={href} target={target} rel={rel} class={classes} style={`color: ${type === "PRIMARY" ? "white" : "white"}`}>
   {label}
 </a>
