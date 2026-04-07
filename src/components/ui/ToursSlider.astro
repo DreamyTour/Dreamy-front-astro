@@ -74,7 +74,7 @@ const { tours, lang } = Astro.props;
 </style>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("astro:page-load", () => {
     const sliders = document.querySelectorAll("[id^='slider-']");
 
     sliders.forEach((slider) => {
